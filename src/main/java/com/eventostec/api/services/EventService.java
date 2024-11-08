@@ -2,12 +2,17 @@ package com.eventostec.api.services;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.eventostec.api.config.AWSConfig;
+import com.eventostec.api.domain.address.Address;
 import com.eventostec.api.domain.event.Event;
 import com.eventostec.api.domain.event.EventRequestDTO;
+import com.eventostec.api.domain.event.EventResponseDTO;
+import com.eventostec.api.repositories.AddressRepository;
 import com.eventostec.api.repositories.EventRepository;
 import com.sun.jdi.request.EventRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -26,24 +31,49 @@ public class EventService {
     @Value("${aws.bucket.name}")
     private String bucketName;
 
+    @Autowired
+    private EventRepository eventRepository;
 
-    public Event createEvent(EventRequestDTO data) {
+    @Autowired
+    private AddressRepository addressRepository;
+
+
+    public EventResponseDTO createEvent(EventRequestDTO eventRequestDTO) {
         String imgUrl = null;
 
         //assim, recuperamos a URL da imagem.
-        if (data.image() != null) {
-            imgUrl = this.uploadImg(data.image());
+        if (eventRequestDTO.image() != null) {
+            imgUrl = this.uploadImg(eventRequestDTO.image());
         }
 
-        Event newEvent = new Event();
-        newEvent.setTitle(data.title());
-        newEvent.setDescription(data.descripton());
-        newEvent.setEvent_url(data.eventUrl());
-        //pega o Date em long que veio do frontend e transforma em Date
-        newEvent.setDate(new Date(data.date()));
-        newEvent.setImg_url(imgUrl);
+        Address address = new Address();
+        address.setCity(eventRequestDTO.city());
+        address.setUf(eventRequestDTO.state());
+        addressRepository.save(address);
 
-        return newEvent;
+
+        Event newEvent = new Event();
+        newEvent.setTitle(eventRequestDTO.title());
+        newEvent.setDescription(eventRequestDTO.description());
+        newEvent.setEvent_url(eventRequestDTO.eventUrl());
+        //pega o Date em long que veio do frontend e transforma em Date
+        newEvent.setDate(new Date(eventRequestDTO.date()));
+        newEvent.setImg_url(imgUrl);
+        newEvent.setRemote(eventRequestDTO.remote());
+
+        eventRepository.save(newEvent);
+
+        return new EventResponseDTO(
+                newEvent.getId(),
+                newEvent.getTitle(),
+                newEvent.getDescription(),
+                newEvent.getDate(),
+                address.getCity(),
+                address.getUf(),
+                newEvent.getRemote(),
+                newEvent.getEvent_url(),
+                newEvent.getImg_url()
+        );
     }
 
     private String uploadImg(MultipartFile multipartFile) {
@@ -77,5 +107,27 @@ public class EventService {
         fos.close();
 
         return convFile;
+    }
+
+    public Page<EventResponseDTO> findAllPaged(Pageable pageable) {
+        Page<Event> events = eventRepository.findAll(pageable);
+
+        if (events.isEmpty()) {
+            throw new IllegalArgumentException("Events not found.");
+        }
+        return events.map(event -> {
+            Address address = addressRepository.findAddressByEventId(event.getId());
+            return new EventResponseDTO(
+                    event.getId(),
+                    event.getTitle(),
+                    event.getDescription(),
+                    event.getDate(),
+                    address != null ? address.getCity() : "",
+                    address != null ? address.getUf() : "",
+                    event.getRemote(),
+                    event.getEvent_url(),
+                    event.getImg_url()
+            );
+        });
     }
 }

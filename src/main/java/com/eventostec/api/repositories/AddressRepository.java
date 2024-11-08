@@ -8,4 +8,6 @@ import java.util.UUID;
 
 @Repository
 public interface AddressRepository extends JpaRepository<Address, UUID> {
+
+    Address findAddressByEventId(UUID eventId);
 }

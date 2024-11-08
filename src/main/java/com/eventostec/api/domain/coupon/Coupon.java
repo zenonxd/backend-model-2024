@@ -22,6 +22,8 @@ public class Coupon {
     @GeneratedValue
     private UUID id;
     private Integer discount;
+
+    @Column(length = 500)
     private String code;
     private Date valid;
 

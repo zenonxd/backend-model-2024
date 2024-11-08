@@ -20,10 +20,19 @@ public class Address {
     @Id
     @GeneratedValue
     private UUID id;
+
+    @Column(length = 100)
     private String uf;
+
+    @Column(length = 100)
     private String city;
 
     @ManyToOne
     @JoinColumn(name = "event_id")
     private Event event;
+
+    public Address(String uf, String city) {
+        this.uf = uf;
+        this.city = city;
+    }
 }

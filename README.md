@@ -16,49 +16,49 @@ Desenvolveremos um backend de uma aplicação para gerenciar eventos de tecnolog
 
 # Estrutura projeto
 
-[ ] O sistema deve permitir que o usuário cadastre um evento com os seguintes campos:
+- [ ] O sistema deve permitir que o usuário cadastre um evento com os seguintes campos:
 
-- Titulo (obrigatório)
-- Descrição (opcional)
-- Data (obrigatório)
-- Local (obrigatório, se presencial)
-- Imagem (opcional)
-- URL do evento (obrigatório, se remoto)
+  - Titulo (obrigatório)
+  - Descrição (opcional)
+  - Data (obrigatório)
+  - Local (obrigatório, se presencial)
+  - Imagem (opcional)
+  - URL do evento (obrigatório, se remoto)
 
-[ ] Eventos podem ser classificados como remotos ou presenciais
+- [ ] Eventos podem ser classificados como remotos ou presenciais
 
-[ ] O sistema deve permitir que o usuário associe um ou mais cupons de desconto a um evento. Cada cupom deve possuir os 
+- [ ] O sistema deve permitir que o usuário associe um ou mais cupons de desconto a um evento. Cada cupom deve possuir os 
 seguintes campos:
 
-- Código do cupom (obrigatório)
-- Desconto percentual ou valor fixo (obrigatório)
-- Data de validade (opcional)
+  - Código do cupom (obrigatório)
+  - Desconto percentual ou valor fixo (obrigatório)
+  - Data de validade (opcional)
 
-[ ] O sistema deve listar os eventos cadastrados, com paginação. A listagem deve incluir:
+- [ ] O sistema deve listar os eventos cadastrados, com paginação. A listagem deve incluir:
 
-- Título
-- Data
-- Local
-- Tipo (remoto ou presencial)
-- Banner
-- Descrição
+  - Título
+  - Data
+  - Local
+  - Tipo (remoto ou presencial)
+  - Banner
+  - Descrição
 
-[ ] O sistema deve retornar somente eventos que ainda não aconteceram
+- [ ] O sistema deve retornar somente eventos que ainda não aconteceram
 
-[ ] O sistema deve permitir que o usuário filtre a lista de eventos pelos seguintes critérios:
+- [ ] O sistema deve permitir que o usuário filtre a lista de eventos pelos seguintes critérios:
 
-- Título
-- Data
-- Local
+  - Título
+  - Data
+  - Local
 
-[ ] O sistema deve permitir que o usuário consulte todos os detalhes de um evento específico, incluindo:
+- [ ] O sistema deve permitir que o usuário consulte todos os detalhes de um evento específico, incluindo:
 
-- Título
-- Descrição
-- Data
-- Local
-- Imagem
-- URL do evento
+  - Título
+  - Descrição
+  - Data
+  - Local
+  - Imagem
+  - URL do evento
 - Lista de cupons ativos, com seus respectivos detalhes (código do cupom, desconto, data de validade)
 
 # Modelagem UML
@@ -508,11 +508,6 @@ Clique nela e vá nas suas propriedades para pegar a URL.
 
 Agora vamos construir o nosso controller para fazer uma chamada de teste!
 
-
-
-
-
-
 # Controller
 
 Criar pacote controllers e nosso ``EventController``.
@@ -527,8 +522,7 @@ desejado.
 
 Para isso, iremos mapear cada parâmetro através do @RequestParam.
 
-```java
-```
+![img_4.png](img_4.png)
 
 ## Requisição Postman teste
 
@@ -536,4 +530,7 @@ Para isso, iremos mapear cada parâmetro através do @RequestParam.
 
 Entretanto, o remote e id vieram null. Então faremos algumas validações.
 
-Paramos em 1h19sec.
+Esses dois campos null se resolvem importando o EventRepository e dando save e instanciando o remote!
+
+![img_5.png](img_5.png)
+

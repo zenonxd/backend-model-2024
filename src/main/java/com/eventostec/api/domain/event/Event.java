@@ -1,9 +1,6 @@
 package com.eventostec.api.domain.event;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,10 +20,20 @@ public class Event {
     @Id
     @GeneratedValue
     private UUID id;
+
+    @Column(length = 100)
     private String title;
+
+    @Column(length = 250)
     private String description;
     private Date date;
     private Boolean remote;
+
+    @Column(length = 100)
     private String img_url;
+
+    @Column(length = 100)
     private String event_url;
+
+
 }

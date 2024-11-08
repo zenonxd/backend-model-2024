@@ -2,9 +2,14 @@ package com.eventostec.api.controllers;
 
 import com.eventostec.api.domain.event.Event;
 import com.eventostec.api.domain.event.EventRequestDTO;
+import com.eventostec.api.domain.event.EventResponseDTO;
 import com.eventostec.api.services.EventService;
+import jakarta.validation.constraints.Size;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -20,7 +25,7 @@ public class EventController {
 
     //tem que dizer que o Post irá consumir dados do tipo multipart form data
     @PostMapping(consumes = "multipart/form-data")
-    public ResponseEntity<Event> create(@RequestParam("title") String title,
+    public ResponseEntity<EventResponseDTO> create(@RequestParam("title") String title,
                                         @RequestParam(value = "description", required = false) String description,
                                         @RequestParam("date") Long date,
                                         @RequestParam("city") String city,
@@ -30,10 +35,22 @@ public class EventController {
                                         @RequestParam(value = "image", required = false) MultipartFile image) {
 
         EventRequestDTO eventRequestDTO = new EventRequestDTO(title, description, date, city, state, remote, eventUrl, image);
-        Event newEvent = eventService.createEvent(eventRequestDTO);
+
+        EventResponseDTO createdEvent = eventService.createEvent(eventRequestDTO);
 
         URI uri = UriComponentsBuilder.fromPath("/api/events/{id}")
-                .buildAndExpand(newEvent.getId()).toUri();
-        return ResponseEntity.created(uri).body(newEvent);
+                .buildAndExpand(createdEvent.id()).toUri();
+
+        return ResponseEntity.created(uri).body(createdEvent);
+    }
+
+    @GetMapping("/events")
+    public ResponseEntity<Page<EventResponseDTO>> findAllPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Pageable pageable = Pageable.ofSize(size).withPage(page);
+        Page<EventResponseDTO> events = eventService.findAllPaged(pageable);
+        return ResponseEntity.ok(events);
     }
 }
