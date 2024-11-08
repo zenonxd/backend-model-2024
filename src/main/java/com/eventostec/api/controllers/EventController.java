@@ -45,11 +45,8 @@ public class EventController {
     }
 
     @GetMapping("/events")
-    public ResponseEntity<Page<EventResponseDTO>> findAllPaged(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+    public ResponseEntity<Page<EventResponseDTO>> findAllPaged(Pageable pageable) {
 
-        Pageable pageable = Pageable.ofSize(size).withPage(page);
         Page<EventResponseDTO> events = eventService.findAllPaged(pageable);
         return ResponseEntity.ok(events);
     }

@@ -61,7 +61,8 @@ public class EventService {
         newEvent.setImg_url(imgUrl);
         newEvent.setRemote(eventRequestDTO.remote());
 
-        eventRepository.save(newEvent);
+        //descobrir pq isso ta dando erro
+        // eventRepository.save(newEvent);
 
         return new EventResponseDTO(
                 newEvent.getId(),
@@ -112,9 +113,7 @@ public class EventService {
     public Page<EventResponseDTO> findAllPaged(Pageable pageable) {
         Page<Event> events = eventRepository.findAll(pageable);
 
-        if (events.isEmpty()) {
-            throw new IllegalArgumentException("Events not found.");
-        }
+
         return events.map(event -> {
             Address address = addressRepository.findAddressByEventId(event.getId());
             return new EventResponseDTO(
