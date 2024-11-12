@@ -2,6 +2,7 @@ package com.eventostec.api.services;
 
 import com.eventostec.api.domain.coupon.Coupon;
 import com.eventostec.api.domain.coupon.CouponRequestDTO;
+import com.eventostec.api.domain.coupon.CouponResponseDTO;
 import com.eventostec.api.domain.event.Event;
 import com.eventostec.api.repositories.CouponRepository;
 import com.eventostec.api.repositories.EventRepository;
@@ -20,18 +21,24 @@ public class CouponService {
     @Autowired
     private EventRepository eventRepository;
 
-    public Coupon associateCouponToEvent(UUID eventId, CouponRequestDTO body) {
+    public CouponResponseDTO associateCouponToEvent(UUID eventId, CouponRequestDTO body) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new IllegalArgumentException("Event not found."));
 
         Coupon coupon = new Coupon();
         coupon.setCode(body.code());
         coupon.setDiscount(body.discount());
-        coupon.setValid(new Date(body.date()));
+        coupon.setValid(new Date(body.valid()));
         coupon.setEvent(event);
 
         couponRepository.save(coupon);
 
-        return coupon;
+        return new CouponResponseDTO(
+                coupon.getId(),
+                coupon.getDiscount(),
+                coupon.getCode(),
+                coupon.getValid(),
+                coupon.getEvent()
+        );
     }
 }

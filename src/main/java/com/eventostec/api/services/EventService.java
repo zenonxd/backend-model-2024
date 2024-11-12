@@ -6,9 +6,11 @@ import com.eventostec.api.domain.address.Address;
 import com.eventostec.api.domain.event.Event;
 import com.eventostec.api.domain.event.EventRequestDTO;
 import com.eventostec.api.domain.event.EventResponseDTO;
+import com.eventostec.api.domain.event.EventWithAddressDTO;
 import com.eventostec.api.repositories.AddressRepository;
 import com.eventostec.api.repositories.EventRepository;
 import com.sun.jdi.request.EventRequest;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -18,9 +20,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.util.Date;
-import java.util.Objects;
-import java.util.UUID;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class EventService {
@@ -38,6 +41,7 @@ public class EventService {
     private AddressRepository addressRepository;
 
 
+    @Transactional
     public EventResponseDTO createEvent(EventRequestDTO eventRequestDTO) {
         String imgUrl = null;
 
@@ -46,12 +50,14 @@ public class EventService {
             imgUrl = this.uploadImg(eventRequestDTO.image());
         }
 
+        //instanciando um Adress e settando o que vamos usar
         Address address = new Address();
         address.setCity(eventRequestDTO.city());
         address.setUf(eventRequestDTO.state());
+        //persistindo no banco
         addressRepository.save(address);
 
-
+        //criando Event, settando os dados do requestDTO
         Event newEvent = new Event();
         newEvent.setTitle(eventRequestDTO.title());
         newEvent.setDescription(eventRequestDTO.description());
@@ -62,15 +68,15 @@ public class EventService {
         newEvent.setRemote(eventRequestDTO.remote());
 
         //descobrir pq isso ta dando erro
-        // eventRepository.save(newEvent);
+        eventRepository.save(newEvent);
 
         return new EventResponseDTO(
                 newEvent.getId(),
                 newEvent.getTitle(),
                 newEvent.getDescription(),
                 newEvent.getDate(),
-                address.getCity(),
-                address.getUf(),
+                newEvent.getAddress().getCity(),
+                newEvent.getAddress().getUf(),
                 newEvent.getRemote(),
                 newEvent.getEvent_url(),
                 newEvent.getImg_url()
@@ -115,14 +121,65 @@ public class EventService {
 
 
         return events.map(event -> {
-            Address address = addressRepository.findAddressByEventId(event.getId());
+
             return new EventResponseDTO(
                     event.getId(),
                     event.getTitle(),
                     event.getDescription(),
                     event.getDate(),
-                    address != null ? address.getCity() : "",
-                    address != null ? address.getUf() : "",
+                    event.getAddress() != null ? event.getAddress().getCity() : "",
+                    event.getAddress() != null ? event.getAddress().getUf() : "",
+                    event.getRemote(),
+                    event.getEvent_url(),
+                    event.getImg_url()
+            );
+        });
+    }
+
+    public Page<EventWithAddressDTO> getUpComingEvents(LocalDate currentDate, Pageable pageable) {
+        Date date = Date.from(currentDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+
+        Page<Event> upcomingEvents = eventRepository.findUpcomingEvents(date, pageable);
+
+        return upcomingEvents.map(event -> {
+
+
+            return new EventWithAddressDTO(
+                    event.getId(),
+                    event.getTitle(),
+                    event.getDescription(),
+                    event.getDate(),
+                    event.getAddress() != null ? event.getAddress().getCity() : "",
+                    event.getAddress() != null ? event.getAddress().getUf() : "",
+                    event.getRemote(),
+                    event.getEvent_url(),
+                    event.getImg_url()
+            );
+        });
+    }
+
+    public Page<EventResponseDTO> findEventsWithFilters(String titulo, String city, String uf,
+                                                        Date startDate, Date endDate,
+                                                        Pageable pageable) {
+        titulo = (titulo != null) ? titulo : "";
+        city = (city != null) ? city : "";
+        uf = (uf != null) ? uf : "";
+        //se data inicial for nula começará em 1970
+        startDate = (startDate != null) ? startDate : new Date(0);
+        //se data final for nula começará agora
+        endDate = (endDate != null) ? endDate : new Date();
+
+        Page<Event> events = eventRepository.findAllEventsByFilters(titulo, city, uf, startDate, endDate, pageable);
+
+        return events.map(event -> {
+
+            return new EventResponseDTO(
+                    event.getId(),
+                    event.getTitle(),
+                    event.getDescription(),
+                    event.getDate(),
+                    event.getAddress() != null ? event.getAddress().getCity() : "",
+                    event.getAddress() != null ? event.getAddress().getUf() : "",
                     event.getRemote(),
                     event.getEvent_url(),
                     event.getImg_url()

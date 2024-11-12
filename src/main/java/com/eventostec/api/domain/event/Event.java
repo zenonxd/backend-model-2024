@@ -1,5 +1,7 @@
 package com.eventostec.api.domain.event;
 
+import com.eventostec.api.domain.address.Address;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -26,6 +28,9 @@ public class Event {
 
     @Column(length = 250)
     private String description;
+
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ") // Formato desejado para a data
+    @Temporal(TemporalType.DATE)
     private Date date;
     private Boolean remote;
 
@@ -35,5 +40,15 @@ public class Event {
     @Column(length = 100)
     private String event_url;
 
+    @OneToOne(mappedBy = "event", cascade = CascadeType.ALL)
+    private Address address;
+
+    public long getDateAsLong() {
+        return this.date.getTime();
+    }
+
+    public void setDateFromLong(long timestamp) {
+        this.date = new Date(timestamp);
+    }
 
 }

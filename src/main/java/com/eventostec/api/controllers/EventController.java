@@ -3,11 +3,13 @@ package com.eventostec.api.controllers;
 import com.eventostec.api.domain.event.Event;
 import com.eventostec.api.domain.event.EventRequestDTO;
 import com.eventostec.api.domain.event.EventResponseDTO;
+import com.eventostec.api.domain.event.EventWithAddressDTO;
 import com.eventostec.api.services.EventService;
 import jakarta.validation.constraints.Size;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +17,9 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Date;
 
 @RestController
 @RequestMapping("/api/event")
@@ -48,6 +53,27 @@ public class EventController {
     public ResponseEntity<Page<EventResponseDTO>> findAllPaged(Pageable pageable) {
 
         Page<EventResponseDTO> events = eventService.findAllPaged(pageable);
+        return ResponseEntity.ok(events);
+    }
+
+    @GetMapping("/upcoming")
+    public ResponseEntity<Page<EventWithAddressDTO>> getUpComingEvents(Pageable pageable) {
+        LocalDate currentDate = LocalDate.now();
+        Page<EventWithAddressDTO> events = eventService.getUpComingEvents(currentDate, pageable);
+        return ResponseEntity.ok(events);
+    }
+
+    @GetMapping("/filter")
+    public ResponseEntity<Page<EventResponseDTO>> searchFilteredEvents(
+            @RequestParam(required = false) String titulo,
+            @RequestParam(required = false) String city,
+            @RequestParam(required = false) String uf,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Date startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Date endDate,
+            Pageable pageable) {
+
+        Page<EventResponseDTO> events = eventService.findEventsWithFilters(titulo, city, uf, startDate, endDate, pageable);
+
         return ResponseEntity.ok(events);
     }
 }

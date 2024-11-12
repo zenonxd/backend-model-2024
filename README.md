@@ -302,25 +302,34 @@ public record EventRequestDTO(String title, String descripton,
 }
 ```
 
-# Service
+# Criando Endpoints
 
-### EventService
+RequestDTO = Não tem ID, é o que é passado no parâmetro.
 
-O primeiro endpoint que iremos fazer é para o usuário cadastrar evento.
+ResponseDTO = Tem id, é o retorno.
 
-[ ] O sistema deve permitir que o usuário cadastre um evento com os seguintes campos:
+## Create Event
 
-- Titulo (obrigatório)
-- Descrição (opcional)
-- Data (obrigatório)
-- Local (obrigatório, se presencial)
-- Imagem (opcional)
-- URL do evento (obrigatório, se remoto)
+- [ ] O sistema deve permitir que o usuário cadastre um evento com os seguintes campos:
 
-O método se chamará CreateEvent e receberá um EventRequestDTO.
+  - Titulo (obrigatório)
+  - Descrição (opcional)
+  - Data (obrigatório)
+  - Local (obrigatório, se presencial)
+  - Imagem (opcional)
+  - URL do evento (obrigatório, se remoto)
+
+- [ ] Eventos podem ser classificados como remotos ou presenciais
+
+Como vamos cadastrar uma imagem no S3, iremos começar por isso.
+
+### Service
+
+O método se chamará CreateEvent, receberá um EventRequestDTO e retornará um EventResponseDTO.
 
 Iniciaremos o método criando uma String de imgURL. Caso ela seja diferente de nula, faremos o upload dela no S3.
 
+⬇️ Este método é um exemplo! Ele NÃO ficará assim.
 ```java
 public Event createEvent(EventRequestDTO data) {
     String imgUrl = null;
@@ -346,7 +355,7 @@ public Event createEvent(EventRequestDTO data) {
 
 Instalaremos a SDK da AWS para conectarmos com S3 e fazer o upload da imagem.
 
-##### Dependência S3
+#### Dependência S3
 
 ```xml
 <dependency>
@@ -356,7 +365,7 @@ Instalaremos a SDK da AWS para conectarmos com S3 e fazer o upload da imagem.
 </dependency>
 ```
 
-##### AWSConfig
+#### AWSConfig
 
 Criaremos um pacote ``config`` com a classe ``AWSConfig``. Essa classe será responsável por criar uma instância do 
 Amazon S3 com as nossas credenciais.
@@ -387,7 +396,7 @@ public class AWSConfig {
 
 Configure a AWS no computador para não precisar passar tudo dentro do método.
 
-##### Configurando AWS
+#### Configurando AWS
 
 Baixe o [CLI](https://aws.amazon.com/pt/cli/)
 
@@ -424,7 +433,7 @@ public class EventService {
 
 E agora, vamos para o método de upload.
 
-##### uploadImg - AmazonS3 (EventService)
+#### uploadImg - AmazonS3 (EventService)
 
 ```java
     private String uploadImg(MultipartFile multipartFile) {
@@ -449,7 +458,7 @@ E agora, vamos para o método de upload.
     }
 ```
 
-###### convertMultipartToFile
+#### convertMultipartToFile
 
 ```java
     //pegamos o que recebemos no request, criamos um arquivo local na máquina
@@ -467,7 +476,7 @@ E agora, vamos para o método de upload.
 
 Agora, precisamos ir na AWS, criar o bucket (deixando-o público) para qualquer um visualizar.
 
-# Criando bucket AWS
+#### Criando bucket AWS
 
 [Link](https://us-east-2.console.aws.amazon.com/s3/buckets?region=us-east-2#)
 
@@ -508,29 +517,63 @@ Clique nela e vá nas suas propriedades para pegar a URL.
 
 Agora vamos construir o nosso controller para fazer uma chamada de teste!
 
-# Controller
+### Método Service Final
+
+[Create Event](https://github.com/zenonxd/backend-model-2024/blob/99e1e5eaecda180958b6cb9a3a84fecfd598a219/src/main/java/com/eventostec/api/services/EventService.java#L41)
+
+[Método para upar imagem no S3](https://github.com/zenonxd/backend-model-2024/blob/99e1e5eaecda180958b6cb9a3a84fecfd598a219/src/main/java/com/eventostec/api/services/EventService.java#L80)
+
+[Método convertendo file](https://github.com/zenonxd/backend-model-2024/blob/99e1e5eaecda180958b6cb9a3a84fecfd598a219/src/main/java/com/eventostec/api/services/EventService.java#L102)
+
+### Controller
+
+### EventController
 
 Criar pacote controllers e nosso ``EventController``.
 
 Importar o service.
 
-## Create
-
-Não podemos deixar como parâmetro, somente o DTO com @RequestBody. Caso contrário, quando formos realizar a operação
+Não podemos deixar como parâmetro somente o DTO com @RequestBody. Caso contrário, quando formos realizar a operação
 no Postman, teremos um erro 415 Unsupported Media Type. Precisamos tratar de Multipart (que vem do postman), para o objeto
 desejado.
 
 Para isso, iremos mapear cada parâmetro através do @RequestParam.
 
-![img_4.png](img_4.png)
+![img_6.png](img_6.png)
 
-## Requisição Postman teste
+### Requisição Postman teste
 
 ![img_3.png](img_3.png)
 
-Entretanto, o remote e id vieram null. Então faremos algumas validações.
 
-Esses dois campos null se resolvem importando o EventRepository e dando save e instanciando o remote!
+## Associando cupom a um evento
 
-![img_5.png](img_5.png)
+Faremos a mesma coisa: um CouponRequestDTO para receber os dados do Cupom no Controller e um CouponResponseDTO, 
+retornando os dados adicionais (id e evento).
 
+### Service
+
+Criar CouponService.
+
+![img_8.png](img_8.png)
+
+### Controller
+
+Criar CouponController.
+
+![img_7.png](img_7.png)
+
+
+## Listagem de eventos cadastrados (Pageable)
+
+### Service
+
+![img_10.png](img_10.png)
+
+### Controller
+
+![img_9.png](img_9.png)
+
+## Listagem de upcoming events
+
+## Criando address
