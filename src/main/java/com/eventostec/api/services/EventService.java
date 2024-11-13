@@ -3,17 +3,19 @@ package com.eventostec.api.services;
 import com.amazonaws.services.s3.AmazonS3;
 import com.eventostec.api.config.AWSConfig;
 import com.eventostec.api.domain.address.Address;
-import com.eventostec.api.domain.event.Event;
-import com.eventostec.api.domain.event.EventRequestDTO;
-import com.eventostec.api.domain.event.EventResponseDTO;
-import com.eventostec.api.domain.event.EventWithAddressDTO;
+import com.eventostec.api.domain.coupon.Coupon;
+import com.eventostec.api.domain.coupon.CouponResponseDTO;
+import com.eventostec.api.domain.event.*;
 import com.eventostec.api.repositories.AddressRepository;
+import com.eventostec.api.repositories.CouponRepository;
 import com.eventostec.api.repositories.EventRepository;
 import com.sun.jdi.request.EventRequest;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -40,6 +42,9 @@ public class EventService {
     @Autowired
     private AddressRepository addressRepository;
 
+    @Autowired
+    private CouponRepository couponRepository;
+
 
     @Transactional
     public EventResponseDTO createEvent(EventRequestDTO eventRequestDTO) {
@@ -50,7 +55,7 @@ public class EventService {
             imgUrl = this.uploadImg(eventRequestDTO.image());
         }
 
-        //instanciando um Adress e settando o que vamos usar
+        //instanciando um Address e settando o que vamos usar
         Address address = new Address();
         address.setCity(eventRequestDTO.city());
         address.setUf(eventRequestDTO.state());
@@ -75,8 +80,8 @@ public class EventService {
                 newEvent.getTitle(),
                 newEvent.getDescription(),
                 newEvent.getDate(),
-                newEvent.getAddress().getCity(),
-                newEvent.getAddress().getUf(),
+                address.getCity(),
+                address.getUf(),
                 newEvent.getRemote(),
                 newEvent.getEvent_url(),
                 newEvent.getImg_url()
@@ -158,10 +163,8 @@ public class EventService {
         });
     }
 
-    public Page<EventResponseDTO> findEventsWithFilters(String titulo, String city, String uf,
-                                                        Date startDate, Date endDate,
-                                                        Pageable pageable) {
-        titulo = (titulo != null) ? titulo : "";
+    public Page<EventResponseDTO> findEventsWithFilters(int page, int size, String city, String uf,
+                                                        Date startDate, Date endDate) {
         city = (city != null) ? city : "";
         uf = (uf != null) ? uf : "";
         //se data inicial for nula começará em 1970
@@ -169,8 +172,10 @@ public class EventService {
         //se data final for nula começará agora
         endDate = (endDate != null) ? endDate : new Date();
 
-        Page<Event> events = eventRepository.findAllEventsByFilters(titulo, city, uf, startDate, endDate, pageable);
+        Pageable pageable = PageRequest.of(page, size);
+        Page<EventAddressProjection> events = eventRepository.findAllEventsByFilters(city, uf, startDate, endDate, pageable);
 
+        //esse "event" é acessando a nossa Projection criada
         return events.map(event -> {
 
             return new EventResponseDTO(
@@ -178,12 +183,43 @@ public class EventService {
                     event.getTitle(),
                     event.getDescription(),
                     event.getDate(),
-                    event.getAddress() != null ? event.getAddress().getCity() : "",
-                    event.getAddress() != null ? event.getAddress().getUf() : "",
+                    event.getCity() != null ? event.getCity() : "",
+                    event.getUf() != null ? event.getUf() : "",
                     event.getRemote(),
-                    event.getEvent_url(),
-                    event.getImg_url()
+                    event.getEventUrl(),
+                    event.getImgUrl()
             );
         });
+    }
+
+    public EventResponseWithCouponsDTO findById(UUID id) {
+        Event event = eventRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Evento não encontrado"));
+
+        List<Coupon> coupons = couponRepository.findCouponByEventId(id);
+
+        List<CouponResponseDTO> couponResponseDTOS = coupons.stream()
+                .map(coupon -> new CouponResponseDTO(
+                        coupon.getId(),
+                        coupon.getDiscount(),
+                        coupon.getCode(),
+                        coupon.getValid(),
+                        event.getId()
+                ))
+                .collect(Collectors.toList());
+
+        return new EventResponseWithCouponsDTO(
+                event.getId(),
+                event.getTitle(),
+                event.getDescription(),
+                event.getDate(),
+
+                event.getAddress() != null ? event.getAddress().getCity() : "",
+                event.getAddress() != null ? event.getAddress().getUf() : "",
+
+                event.getImg_url(),
+                event.getEvent_url(),
+                couponResponseDTOS
+        );
     }
 }

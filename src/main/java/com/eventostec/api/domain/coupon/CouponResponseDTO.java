@@ -9,5 +9,5 @@ public record CouponResponseDTO(UUID id,
                                 Integer discount,
                                 String code,
                                 Date valid,
-                                Event event) {
+                                UUID eventId) {
 }

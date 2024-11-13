@@ -1,9 +1,6 @@
 package com.eventostec.api.controllers;
 
-import com.eventostec.api.domain.event.Event;
-import com.eventostec.api.domain.event.EventRequestDTO;
-import com.eventostec.api.domain.event.EventResponseDTO;
-import com.eventostec.api.domain.event.EventWithAddressDTO;
+import com.eventostec.api.domain.event.*;
 import com.eventostec.api.services.EventService;
 import jakarta.validation.constraints.Size;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +17,7 @@ import java.net.URI;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/event")
@@ -64,16 +62,23 @@ public class EventController {
     }
 
     @GetMapping("/filter")
-    public ResponseEntity<Page<EventResponseDTO>> searchFilteredEvents(
-            @RequestParam(required = false) String titulo,
+    public ResponseEntity<Page<EventResponseDTO>> searchFilteredEvents(@RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String city,
             @RequestParam(required = false) String uf,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Date startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Date endDate,
-            Pageable pageable) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Date endDate
+            ) {
 
-        Page<EventResponseDTO> events = eventService.findEventsWithFilters(titulo, city, uf, startDate, endDate, pageable);
+        Page<EventResponseDTO> events = eventService.findEventsWithFilters(page, size, city, uf, startDate, endDate);
 
         return ResponseEntity.ok(events);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<EventResponseWithCouponsDTO> findById(@PathVariable UUID id) {
+        EventResponseWithCouponsDTO eventResponseDTO = eventService.findById(id);
+
+        return ResponseEntity.ok(eventResponseDTO);
     }
 }

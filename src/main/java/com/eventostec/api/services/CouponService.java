@@ -38,7 +38,7 @@ public class CouponService {
                 coupon.getDiscount(),
                 coupon.getCode(),
                 coupon.getValid(),
-                coupon.getEvent()
+                coupon.getEvent().getId()
         );
     }
 }

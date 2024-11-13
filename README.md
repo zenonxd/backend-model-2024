@@ -576,4 +576,267 @@ Criar CouponController.
 
 ## Listagem de upcoming events
 
+### Repository
+
+### Service
+
+### Controller
+
 ## Criando address
+
+### Repository
+
+### Service
+
+### Controller
+
+## Filtered Events
+
+Este método fará um filtro por data, local e título do evento.
+
+Criaremos um método no EventRepository.
+
+### Repository
+
+Teremos como parâmetro a nossa data atual, cidade, uf, data de começo e término.
+
+Essa query será elaborada da seguinte forma.
+
+1. Primeiro, faremos um Join das duas tabelas (Event e Address), pois será uma consulta feita em ambas tabelas.
+
+2. Depois do Join, faremos a comparação se as informações são parecidas.
+
+Se o "e.title" < título do banco de dados, for parecido com o título que passamos como parâmetro, iremos retorná-lo,
+caso contrário será null. Será o mesmo para os outros atributos.
+
+E outra, não é para comparar se é IGUAL e sim "LIKE", por isso, estamos falando parecido.
+
+### Service
+
+### Controller
+
+
+
+
+## FindEventById (com lista de cupom)
+
+### Repository
+
+### Service
+
+### Controller
+
+
+# Configurando AWS para subir a aplicação
+
+## Criando VPC
+
+Criaremos uma VPC (virtual private cloud). Ou seja, uma sessão lógica para colocar os nossos recursos na AWS.
+
+Imagine uma faculdade. Uma faculdade poderá ter vários cursos! A AWS em tese pode ser vista como uma faculdade.
+
+Dentro dela, poderemos criar "cursos" e cada curso terá suas regras e seus controles. 
+
+Na VPC poderemos criar sub redes, tendo controle total dela, controle de ip (quem entra e quem sai).
+
+Digite VPC na barra de pesquisa e crie um VPC.
+
+**Nome:** eventostec-vpc
+
+**Ipv4 CIDR** - Define o tamanho do bloco de Ips que teremos dentro da nossa VPC (ela terá controle TOTAL da rede). 
+Colocaremos o valor de ``10.0.0.0/23`` (isso dará 512 endereços ips disponíveis). Crie a VPC.
+
+## Criando gateway de internet
+
+Gateways de internet são os componentes dentro da nossa VPC que irão permitir a comunicação da nossa rede dentro da VPC
+com a internet. Serão o ponto de saída de todo o tráfego para a internet.
+
+É possível ver no desenho que o gateway está logo na entrada do desigeventostec-vpcn, como se fosse o "porteiro".
+
+No lado esquerdo, vá até ``internet gateways``.
+
+Crie um internet gateway, se chamará ``eventostec-gtw``.
+
+Vá em actions > associe o gateway à VPC.
+
+## Criando subrede
+
+Subredes são divisões lógicas dentro da nossa VPC, ela irá nos permitir que a gente segmente a nossa VPC em redes
+menores. Além disso, será possível fazer um controle de segurança para essas redes menores.
+
+Poderemos ter então:
+
+1. Uma subnet privada que não está exposta na internet; 
+2. Subnet pública, onde teremos uma conexão com ela.
+
+Ou seja, subnets servem para ser possível fazer segregações dentro da VPC. Lembra do exemplo de faculdade? Imagine a
+VPC como a coordenadora do curso (que manda em todo o curso de computação) e a subnet (subrede) sendo cada uma das 
+materias dentro da computação.
+
+Na subnet será possível também faze o controle do range de endereços de IP que estão dentro da subnet.
+
+Ou seja, quando criarmos a nossa subrede precisaremos associar ela a uma VPC.
+
+### Subrede pública
+
+No lado esquerdo, vá até subredes, crie uma associando a VPC que criamos acima.
+
+**Essa subnet será pública,** onde iremos atrelar o nosso EC2 (ele estará publicamente acessível).
+
+**Seu nome será:** ``eventostec-rede-publica``.
+
+**Além disso, especificaremos o ``bloco DIR IPv4 da sub rede``** (é a fatia que ela vai recolher do valor que colocamos
+na VPC, ``10.0.0.0/23``). Daremos o valor de ``10.0.1.0/24``! Ou seja, daqueles 512 ips, pegaremos somente 256 
+(os últimos), os outros 256 primeiros serão para a subnet privada.
+
+**Zona de disponibilidade**: será us-east-1a (uma zona física).
+
+![img_11.png](img_11.png)
+
+### Subrede privada
+
+Crie outra VPC, será privada.
+
+**Seu nome será:** ``eventostec-rede-privada``.
+
+Seu subnet blocks serão ``10.0.0.0/24`` para pegar os PRIMEIROS 256 Ips, já que a rede privada pega os ultimos.
+
+**Zona de disponibilidade** (será diferente da rede pública): será us-east-1b
+
+Crie a subrede.
+
+## Mapeando gateway para tabela de rotas
+
+Vá até as VPCs e crie na que criamos. Vá até tabela de rotas, clique e abra a nova guia.
+
+Vá em editar todas > adicione uma nova rota > selecione ``0.0.0.0/0`` > gateway da internet > selecione o gateway que
+criamos.
+
+Logo, todo o tráfego que vier de fora, redirecionaremos para um gateway de internet. Assim, o gateway estará atrelado
+a VPC.
+
+Agora, temos as subnet atreladas a tabela de rotas que por sua vez, está atrelada e a rede (gateway de internet).
+
+![img_12.png](img_12.png)
+
+### Subrede privada
+
+## Criando recurso - serviço (EC2)
+
+Digite EC2 na barra de pesquisa.
+
+Vá em instâncias > execute execução.
+
+**Seu nome será:** ``java-service-eventostec``
+
+**Sistema operacional:** Amazon Linux.
+
+**Arquitetura:** Padrão.
+
+**Tipo de instância:** Padrão (t2 micro).
+
+### Par de Chaves
+
+Par de chave é um SSH que usaremos para nos conectarmos com essa instância depois. Essa instância é uma máquina virtual
+que será criada na AWS. 
+
+Eventualmente precisaremos nos conectar a ela, para instalar algumas coisas, rodar aplicação, etc.
+
+Para nos conectar de forma remota podemos usar:
+
+- Shell;
+- Terminal do computador, através de SSH, rodando comandos.
+
+**Par de chaves:** crie um ou selecione um já existente.
+
+### Conexão de Rede
+
+Vá em editar, e coloque a VPC que criamos (não deixa a padrão). Selecione também a subnet onde a máquina irá nascer 
+(coloque a que criamos).
+
+Coloque habilitado para o IP ser atribuído automaticamente.
+
+### Criar grupo de segurança
+
+Ele irá controlar quais recursos a nossa instância pode consultar, o que pode acessar, qual tráfego receber.
+
+Seria um firewall a nível de serviço.
+
+Crie um novo grupo chamado eventostec-ec2-sg (sg = security group).
+
+Descrição: EventosTec Java Service Security Group.
+
+#### Regras grupo de segurança
+
+Permita configurações de SSH (de qualquer lugar), comunicações HTTP (de qualquer) e HTTPS (qualquer lugar).
+
+Coloque também regra de TCP customizado (de qualquer lugar), permitindo comunicações na porta 8080 (onde rodará 
+a aplicação).
+
+![img_13.png](img_13.png)
+
+#### Configurar armazenamento 
+
+Coloque padrão.
+
+#### Detalhes avançados
+
+Desça até dados do usuário e coloque este comando:
+
+> #!/bin/bash
+> yum update -y
+> sudo yum install java-21-amazon-corretto-headless
+
+Isso basicamente é um script que será rodada ao iniciar a instância. Inicialmente, ela estará vazia, então assim que
+rodar o java será instalado.
+
+Feito tudo isso, execute a instância!
+
+## RDS (Relational DataBase da AWS) - criando banco relacional
+
+Criaremos nele um banco de dados PostgreSQL.
+
+Vá em criar banco de dados > selecione standard > PostgreSQL.
+
+### Modelos
+
+Em modelos, será nível gratuito ‼️(NÃO ESQUECE DISSO, se não a conta vem! E é caro!!).
+
+### Settings
+
+Altere o nome da database, coloque: ``eventostec-database``
+
+Username será postgres.
+
+Gerenciamento de credenciais: Managed in AWS Secrets Manager - most secure (pra ele criar a senha).
+
+### Configuração instância
+
+Deixa tudo padrão.
+
+### Armazenamento 
+
+Deixa tudo padrão.
+
+### Conectividade
+
+Coloque para conectar o RDS a um recurso (instância do EC2) e marque a instância que está rodando. 
+
+![img_14.png](img_14.png)
+
+‼️Ao fazer isso, automaticamente ele irá criar um security group que controla o acesso do EC2 ao RDS. Precisamos 
+alterar algumas coisas, permitindo que o EC2 acesse o RDS.
+
+#### VPC security group (firewall)
+
+Coloque para criar novo.
+
+Criaremos um security group específico para o nosso RDS (para controlar as seguranças do nosso banco).
+
+### Monitoramento
+
+Desmarca.
+
+E crie o banco de dados! Ele vai demorar um tempo para aparecer o localhost e as credenciais.
+
+## Colocando informações AWS na aplicação

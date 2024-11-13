@@ -1,18 +1,18 @@
 package com.eventostec.api.domain.event;
 
-import com.eventostec.api.domain.address.Address;
 import com.eventostec.api.domain.coupon.CouponResponseDTO;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
-public record EventResponseDTO(UUID id, String title,
+public record EventResponseWithCouponsDTO(UUID id, String title,
                                String description,
                                Date date, String city,
-                               String state, Boolean remote,
-                               String eventUrl, String imgUrl
+                               String state,
+                               String imgUrl,
+                               String eventUrl,
+                               List<CouponResponseDTO> coupons
 
 ) {
 
