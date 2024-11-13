@@ -615,9 +615,6 @@ E outra, não é para comparar se é IGUAL e sim "LIKE", por isso, estamos falan
 
 ### Controller
 
-
-
-
 ## FindEventById (com lista de cupom)
 
 ### Repository
@@ -840,3 +837,83 @@ Desmarca.
 E crie o banco de dados! Ele vai demorar um tempo para aparecer o localhost e as credenciais.
 
 ## Colocando informações AWS na aplicação
+
+Coloque a url do banco no app.properties, assim como a senha.
+
+Para pegar a senha vá em configurações do RDS e em "retrieve secret value".
+
+### IAM
+
+Vá em funções (roles) e crie um perfil para usar no EC2, para que ele tenha acesso ao nosso S3. Afinal o EC2 vai 
+impulsionar dados dentro do bucket do S3.
+
+Selecione um serviço da AWS > EC2 e coloque para ele ter AmazonS3FullAccess.
+
+Assim, criaremos credenciais para os nossos serviços.
+
+O nome da role será EC2ServiceS3FullAccess
+
+### EC2
+
+Volte para o EC2, vá na nossa instância criada > ações > segurança > modificar função IAM > coloque a que criamos.
+
+## Modificações pré-build
+
+Antes de fazer o build da aplicação, vamos fazer umas modificações no código em virtude dos testes unitários.
+
+Coloque a dependência do H2 para realizar os testes unitários (para que não seja utilizado o banco do RDS).
+
+Já sabemos, só criar um ``application-test.properties`` para que seja usado as configurações para se conectar ao
+banco H2.
+
+No nossa classe main de test, colocamos o profile para o properties de test:
+
+![img_15.png](img_15.png)
+
+Dê o comando maven: 
+
+>mvn clean install
+
+Copiaremos o arquivo de build para a máquina do EC2.
+
+Primeiro, teste a conexão com a instãncia do EC2. Vá no EC2 > Instances > InstanceID > Connect (campo superior direito).
+
+Pegaremos o IP público (ec2-user...) para conectar via SSH.
+
+Vá no terminal e crie um terminal para conectar a uma nova ``SSH Session``. Preencha os campos corretamente e conecte-se.
+
+Digite java --version para identificar se ele foi instalado, caso não tenha sido, digite ``sudo yum install java-21-amazon
+-correto-headless`` e digite ``y`` para confirmar.
+
+Para encerrar a conexão digite ``exit``.
+
+## Copiando arquivo JAR para maquina do EC2
+
+O arquivo está dentro do pacote target.
+
+Use o comando abaixo para copiar o arquivo para a máquina virtual.
+
+>scp -i C:\Users\SEUPC\.ssh\suaKEY.pem .\target\api-0.0.1-SNAPSHOT.jar ec2-user@oIPaqui:/home/ec2-user
+
+Para se conectar: 
+
+> ssh -i C:\Users\seuPC\.ssh\suaKEY.pem ec2-user@IpAqui
+
+
+Com o arquivo lá dentro, só dar o comando:
+
+> java -jar api-0.0.1-SNAPSHOT.jar
+
+‼️ Para que não dê nenhum problema de conexão com o banco de dados:
+
+Vá até o RDS > databases > clique na data base > scrolla até o final (Security group rules (1)) > clique no security
+group (vai abrir uma outra guia) > clique no security group ID > edit inbound rules > adicione regra de (Todo tráfego)
+que vier do security group.
+
+![img_16.png](img_16.png)
+
+## Para testar
+
+Vá até o EC2, pega o IP público e vá até o Postman para testar as requisições.
+
+Ip será: ``ipdoec2:8080/api/event``

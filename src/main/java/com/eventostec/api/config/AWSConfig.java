@@ -20,10 +20,12 @@ public class AWSConfig {
                 //no computador
                 .standard()
                 //se o upload der algum problema use o código abaixo
-                //.withCredentials(new DefaultAWSCredentialsProviderChain())
+
+                .withCredentials(new DefaultAWSCredentialsProviderChain())
 
                 //você pode também instalar plugin do AWS, pois o intelij
                 //identifica o profile default configurado
-                .withRegion(awsRegion).build();
+                .withRegion(awsRegion)
+                .build();
     }
 }
